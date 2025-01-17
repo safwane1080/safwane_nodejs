@@ -33,7 +33,7 @@ Dit project biedt API die gebruikers in staat stelt om:
    - Een endpoint voor het zoeken naar nieuwsitems op basis van een veld, zoals titel.
 
 5. **Documentatiepagina:**
-   - Een statische HTML-pagina beschikbaar op de root (`/`) met een overzicht van alle API-endpoints.
+   - Een statische HTML-pagina beschikbaar op de root (`public/index.html`) met een overzicht van alle API-endpoints.
 
 ## Technische Vereisten
 
@@ -69,9 +69,8 @@ Zorg dat de volgende software is geïnstalleerd:
 npm install
 
 ````
-Maak een .env bestand en configureer databasegegevens:
+Maak een .env bestand en configureer databasegegevens door .env.example te kopiëren:
 
-Maak een .env bestand door .env.example te kopiëren:
 ---
 cp .env.example .env
 ---
@@ -84,9 +83,27 @@ DB_DATABASE=jouw_database
 DB_USERNAME=jouw_gebruiker
 DB_PASSWORD=jouw_wachtwoord
 
-## Initialiseer de database:
+## Initialiseer de database en zet dit in een sql cmd:
 
--Voer de SQL-scriptbestanden uit in de map /sql/ om de tabellen te maken.
+- CREATE TABLE users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  first_name VARCHAR(50) NOT NULL,
+  last_name VARCHAR(50) NOT NULL,
+  email VARCHAR(100) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+- CREATE TABLE news (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  image_url VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 
 ## Start de applicatie:
 
