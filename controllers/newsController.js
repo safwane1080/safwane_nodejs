@@ -1,53 +1,75 @@
-const newsModel = require('../models/newsModel');
+const db = require('../config/db');
+const { validationResult } = require('express-validator');
 
-const getNews = (req, res) => {
-  newsModel.getAllNews((err, result) => {
-    if (err) {
-      return res.status(500).send('Error retrieving news');
+// Create
+exports.createNews = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+  const { user_id, title, content, image_url } = req.body;
+  db.query(
+    'INSERT INTO news (user_id, title, content, image_url) VALUES (?, ?, ?, ?)',
+    [user_id, title, content, image_url],
+    (err, result) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.status(201).json({ message: 'News added successfully', id: result.insertId });
     }
-    res.json(result);
+  );
+};
+
+// Read all
+exports.getAllNews = (req, res) => {
+  const { limit, offset, search } = req.query;
+  let query = 'SELECT * FROM news';
+  const params = [];
+
+  if (search) {
+    query += ' WHERE title LIKE ?';
+    params.push(`%${search}%`);
+  }
+
+  query += ' LIMIT ? OFFSET ?';
+  params.push(Number(limit) || 10, Number(offset) || 0);
+
+  db.query(query, params, (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.status(200).json(results);
   });
 };
 
-const getNewsById = (req, res) => {
+// Read one
+exports.getNewsById = (req, res) => {
   const { id } = req.params;
-  newsModel.getNewsById(id, (err, result) => {
-    if (err) {
-      return res.status(500).send('Error retrieving news item');
-    }
-    res.json(result);
+  db.query('SELECT * FROM news WHERE id = ?', [id], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (results.length === 0) return res.status(404).json({ error: 'News not found' });
+    res.status(200).json(results[0]);
   });
 };
 
-const createNews = (req, res) => {
-  const news = req.body;
-  newsModel.createNews(news, (err, result) => {
-    if (err) {
-      return res.status(500).send('Error creating news item');
-    }
-    res.status(201).send('News item created');
-  });
-};
+// Update
+exports.updateNews = (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-const updateNews = (req, res) => {
   const { id } = req.params;
-  const news = req.body;
-  newsModel.updateNews(id, news, (err, result) => {
-    if (err) {
-      return res.status(500).send('Error updating news item');
+  const { title, content, image_url } = req.body;
+
+  db.query(
+    'UPDATE news SET title = ?, content = ?, image_url = ? WHERE id = ?',
+    [title, content, image_url, id],
+    (err) => {
+      if (err) return res.status(500).json({ error: 'Database error' });
+      res.status(200).json({ message: 'News updated successfully' });
     }
-    res.send('News item updated');
-  });
+  );
 };
 
-const deleteNews = (req, res) => {
+// Delete
+exports.deleteNews = (req, res) => {
   const { id } = req.params;
-  newsModel.deleteNews(id, (err, result) => {
-    if (err) {
-      return res.status(500).send('Error deleting news item');
-    }
-    res.send('News item deleted');
+  db.query('DELETE FROM news WHERE id = ?', [id], (err) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.status(200).json({ message: 'News deleted successfully' });
   });
 };
-
-module.exports = { getNews, getNewsById, createNews, updateNews, deleteNews };
